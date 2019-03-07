@@ -1,7 +1,6 @@
 # webbouwer.github.io
 Webbouwer code hub
 
-
 [<img src="https://img.shields.io/badge/Webdesign Den Haag-Site-red.svg"/>](https://webdesigndenhaag.net) 
  [<img src="https://img.shields.io/badge/Webbouwer-gists-blue.svg"/>](https://gist.github.com/webbouwer/)  
 
