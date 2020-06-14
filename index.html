@@ -1,0 +1,280 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="">
+  <meta property="og:type" content="">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+
+  <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+
+  <!-- Add your site or application content here -->
+  <p>Hello world! This is HTML5 Boilerplate.</p>
+
+
+<div id="container">
+</div>
+
+<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+
+
+
+<script>
+
+/* JQuery Ajax Request Multiple Json Sources
+ *
+ * Using an array of urls to request known json data types:
+ * Github notifications
+ * Wordpress wp json category posts
+ * JSFiddle notifications
+ *
+ * Notes:
+ * var 'timer' can be changed
+ * 'timer' defines the pause between each request and the loading loop speed.
+ * var 'phototags' can be changed
+ * The default loremflickr pictures are themed with csv keyword string 'phototags'
+ * var 'que'
+ * 'que' counts down the number of urls waiting to be requested
+ * Debug Ajax Requests
+ * So far the JSFiddle api only works with as less ajax settings as possible
+ * ie. setting contenttype, async or datatype will throw an error
+ * This might be caused by the json source, the request code, platform- or client related.
+ */
+
+jQuery(function(){
+
+
+// source urls (input)
+var urlList = [
+    'https://jsfiddle.net/api/user/webbouwer/demo/list.json?&limit=15&sort=date&order=desc',
+    'https://api.github.com/users/webbouwer/events?&per_page=15&orderby=date&order=desc',
+    'https://www.webdesigndenhaag.net/wp-json/wp/v2/posts?&per_page=15&orderby=date&order=desc&_embed',
+];
+
+// result stack
+var bundle = [];
+
+// time between requests in milli seconds
+var timer = 10;
+
+// requests in que
+var que = urlList.length;
+
+// a little fun with photo requests from loremflickr
+var phototags = 'programming, student';
+
+// request
+function handle_request(){
+
+  $.each( urlList, function(nr, jsonurl) {
+
+      setTimeout( function(){
+
+      $.ajax({
+          url:jsonurl,
+          complete: function (response) {
+              que--;
+              if (response) {
+
+                var domain = jsonurl.replace('http://', '').replace('https://', '').split(/[/?#]/)[0];
+                var data = JSON.parse(response.responseText);
+
+                if (domain.indexOf('jsfiddle') !== -1) {
+                  get_jsfiddle_items( data, domain );
+                }else if ( domain.indexOf('github') !== -1 ) {
+                  get_github_items( data, domain );
+                }else if( jsonurl.indexOf('wp-json') !== -1 ){
+                  get_wpjson_items( data, domain );
+                }else{
+                	// there is no default json ..
+                }
+                // add specific json source formats
+              }
+          },
+          error: function () {
+              que--;
+              $('#container').html('Bummer: there was an error!');
+
+          },
+      });
+
+
+    }, timer);
+    timer += 100;
+
+  });
+
+}
+
+/*
+ *  Github data handling
+ */
+function get_github_items( jsondata, domain ){
+
+	$.each(jsondata, function(idx, value) {
+  var item = {};
+    item.id = value.id;
+    item.domain = domain;
+    item.type = 'Github';
+    item.username = value.actor.display_login;
+    item.date = value.created_at;
+    item.url = value.repo.url;
+
+    item.title = value.type + ' on ' + value.repo.name;
+
+
+    if( value.payload.commits ){
+    	item.message = '<ul>';
+      $.each( value.payload.commits, function(i, commit) {
+         item.message += '<li>' + commit.message + '</li>';
+         return i < 3;
+      });
+    	item.message += '</ul>';
+    }else{
+     	item.message = '';
+    }
+
+    item.image = 'https://loremflickr.com/120/100/'+ phototags +'/all?lock=' + idx;
+
+    bundle.push(item);
+  	//$('#container').append( value.type );
+
+  });
+}
+
+/*
+ *  JSFiddle data handling
+ */
+function get_jsfiddle_items( jsondata, domain ){
+	$.each(jsondata, function(idx, value) {
+  	var item = {};
+  	var urlseg = value.url.split('/');
+    item.id = urlseg[4];
+    item.domain = domain;
+    item.type = 'JSFiddle';
+    item.username = value.author;
+    item.date = value.created;
+    item.url = 'https:' + value.url;
+
+    item.title = value.title;
+
+    item.message = value.framework;
+    if (value.description != '') {
+    	item.message += ' - ' + value.description;
+    }
+
+    item.image = 'https://loremflickr.com/120/100/'+ phototags +'/all?lock=' + idx;
+
+    bundle.push(item);
+  	//$('#container').append( value.title );
+
+  });
+}
+/*
+ *  WP-json data handling
+ */
+function get_wpjson_items( jsondata, domain ){
+	$.each(jsondata, function(idx, value) {
+    var item = {};
+    item.id = value.id;
+    item.domain = domain;
+    item.type = 'WP-json';
+    item.username = value._embedded.author[0].name;
+    item.date = value.modified;
+    item.url = value.link;
+
+    item.title = value.title.rendered;
+
+    item.message = value.excerpt.rendered;
+
+    if (value._embedded['wp:featuredmedia']) {
+    	item.image = value._embedded['wp:featuredmedia'][0].media_details.sizes.medium.source_url;
+    } else {
+      item.image = 'https://loremflickr.com/120/100/'+ phototags +'/all?lock=' + idx;
+    }
+
+    bundle.push(item);
+  	//$('#container').append( value.title.rendered );
+
+  });
+}
+
+// order, format and output
+function load_item_list(){
+
+		bundle.sort(function(a, b) {
+      var keyA = new Date(a.date),
+      keyB = new Date(b.date);
+      // Compare the 2 dates
+      if (keyA < keyB) return 1;
+      if (keyA > keyB) return -1;
+      return 0;
+    });
+
+
+    $.each(bundle, function(idx, value) {
+
+    	var html = '';
+      html += '<li>';
+      html += '<h3><a class="linkbar" href="' + value.url + '" title="' + value.title + '">' + value.title + '</a></h3>';
+      html += '<sub>'+ value.type + ' '+ value.date + '</sub>';
+      html += '<div>'+ value.message + '</div>';
+      html += '<img src="' + value.image + '" alt="thumbnail media ' + value.title + '" />';
+      html += '<sup>'+value.username + '</sup>';
+      html += '</li>';
+
+      $('#container').append( html );
+
+    });
+}
+
+// loading handler
+function content_loader(){
+
+	setTimeout( function(){
+  	if( que <= 0 ){ // loop untill que is emtpy
+  		load_item_list();
+  	}else{
+    	content_loader();
+    }
+	}, timer );
+
+}
+
+handle_request();
+content_loader();
+
+
+});
+
+
+
+</script>
+
+
+  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
+  <script>
+    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
+    ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'anonymizeIp', true); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
+  </script>
+  <script src="https://www.google-analytics.com/analytics.js" async></script>
+</body>
+
+</html>
