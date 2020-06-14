@@ -12,33 +12,39 @@
   <meta property="og:url" content="">
   <meta property="og:image" content="">
 
+  <!-- Place favicon.ico in the root directory
+
   <link rel="manifest" href="site.webmanifest">
   <link rel="apple-touch-icon" href="icon.png">
-  <!-- Place favicon.ico in the root directory -->
-
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/main.css">
 
   <meta name="theme-color" content="#fafafa">
+    -->
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+
+
+
+ <style>
+    html,
+     body
+     {
+         width:100%;
+         height:100%;
+         margin:0;
+         padding:0;
+     }
+
+    </style>
 </head>
 
 <body>
-
-  <!-- Add your site or application content here -->
-  <p>Hello world! This is HTML5 Boilerplate.</p>
-
-
-<div id="container">
+    <div id="container">
 </div>
 
-<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+    <script>
 
-
-
-<script>
-
-/* JQuery Ajax Request Multiple Json Sources
+    /* JQuery Ajax Request Multiple Json Sources
  *
  * Using an array of urls to request known json data types:
  * Github notifications
@@ -56,14 +62,16 @@
  * So far the JSFiddle api only works with as less ajax settings as possible
  * ie. setting contenttype, async or datatype will throw an error
  * This might be caused by the json source, the request code, platform- or client related.
+ *
  */
 
 jQuery(function(){
 
 
-// source urls (input)
+
+// source urls (input) //
 var urlList = [
-    'fileparser.php?url=https://jsfiddle.net/api/user/webbouwer/demo/list.json?&limit=15&sort=date&order=desc',
+    'https://www.webbouwer.org/fileparser.php?&url=https://jsfiddle.net/api/user/webbouwer/demo/list.json?&limit=15&sort=date&order=desc',
     'https://api.github.com/users/webbouwer/events?&per_page=15&orderby=date&order=desc',
     'https://www.webdesigndenhaag.net/wp-json/wp/v2/posts?&per_page=15&orderby=date&order=desc&_embed',
 ];
@@ -89,6 +97,7 @@ function handle_request(){
 
       $.ajax({
           url:jsonurl,
+          crossDomain: true,
           complete: function (response) {
               que--;
               if (response) {
@@ -96,7 +105,9 @@ function handle_request(){
                 var domain = jsonurl.replace('http://', '').replace('https://', '').split(/[/?#]/)[0];
                 var data = JSON.parse(response.responseText);
 
-                if (domain.indexOf('jsfiddle') !== -1) {
+
+
+                if(jsonurl.indexOf('jsfiddle') != -1){ // domain.indexOf('webbouwer') !== -1
                   get_jsfiddle_items( data, domain );
                 }else if ( domain.indexOf('github') !== -1 ) {
                   get_github_items( data, domain );
@@ -163,6 +174,7 @@ function get_github_items( jsondata, domain ){
  *  JSFiddle data handling
  */
 function get_jsfiddle_items( jsondata, domain ){
+
 	$.each(jsondata, function(idx, value) {
   	var item = {};
   	var urlseg = value.url.split('/');
@@ -264,17 +276,8 @@ content_loader();
 
 });
 
+    </script>
 
-
-</script>
-
-
-  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
-  <script>
-    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
-    ga('create', 'UA-XXXXX-Y', 'auto'); ga('set', 'anonymizeIp', true); ga('set', 'transport', 'beacon'); ga('send', 'pageview')
-  </script>
-  <script src="https://www.google-analytics.com/analytics.js" async></script>
 </body>
 
 </html>
