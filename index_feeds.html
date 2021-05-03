@@ -1,0 +1,208 @@
+<!doctype html><html class="no-js" lang=""><head><meta charset="utf-8"><title>Webbouwer at work</title><meta name="description" content=""><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+
+    html, body{
+        width:100%;
+        height:100%;
+        margin:0;
+        padding:0;
+    }
+    #container{
+		width:100%;
+    }
+
+    #container > ul
+    {
+        display: block;
+        height:80px;
+        border-top:2px solid black;
+        overflow:hidden;
+        -webkit-transition: all 1s ease;
+        -moz-transition: all 1s ease;
+        -o-transition: all 1s ease;
+    }
+    #container > ul li {
+        display: block;
+        height:0;
+        min-height:0px;
+        padding:0;
+        overflow:hidden;
+        -webkit-transition: all 1s ease;
+        -moz-transition: all 1s ease;
+        -o-transition: all 1s ease;
+    }
+    #container > ul:hover
+    {
+        height:240px;
+        overflow-y: scroll;
+    }
+    #container > ul li:first-child
+    {
+        height:80px;
+        padding:20;
+    }
+
+    #container > ul:hover li
+    {
+        height:auto;
+        min-height:240px;
+        padding:20;
+    }
+
+    </style>
+    </head>
+<body>
+<div id="container"></div>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+<script>
+jQuery(function(){jQuery(document).ready(function(){var urlList = ['https://www.webbouwer.org/source/fileparser.php?url=https://jsfiddle.net/api/user/webbouwer/demo/list.json?&limit=15&sort=date&order=desc',  'https://api.github.com/users/webbouwer/events?&per_page=15&orderby=date&order=desc', 'https://www.webdesigndenhaag.net/wp-json/wp/v2/posts?&per_page=15&orderby=date&order=desc&_embed',];
+var bundle = [];var timer = 10;var que = urlList.length;var phototags = 'programming, student';
+function handle_request(){
+
+  $.each( urlList, function(nr, jsonurl) {
+setTimeout( function(){
+      $.ajax({
+          url:jsonurl,
+          crossDomain: true,
+          complete: function (response) {
+              que--;
+              if (response) {
+                var domain = jsonurl.replace('http://', '').replace('https://', '').split(/[/?#]/)[0];
+                var data = JSON.parse(response.responseText);
+                if(jsonurl.indexOf('jsfiddle') != -1){ // domain.indexOf('webbouwer') !== -1
+                  get_jsfiddle_items( data, domain );
+                }else if ( domain.indexOf('github') !== -1 ) {
+                  get_github_items( data, domain );
+                }else if( jsonurl.indexOf('wp-json') !== -1 ){
+                  get_wpjson_items( data, domain );
+                }else{
+                	// there is no default json ..
+                }
+              }
+          },
+          error: function () {
+              que--;
+              $('#container').html('Bummer: there was an error!');
+          },
+      });
+    }, timer);
+    timer += 80;
+  });
+}
+function get_github_items( jsondata, domain ){
+$.each(jsondata, function(idx, value) {
+  var item = {};
+    item.id = value.id;
+    item.domain = domain;
+    item.type = 'Github';
+    item.username = value.actor.display_login;
+    item.date = value.created_at;
+    item.url = value.repo.url;
+    item.title = value.type + ' on ' + value.repo.name;
+    if( value.payload.commits ){
+    	item.message = '<ul>';
+      $.each( value.payload.commits, function(i, commit) {
+         item.message += '<li>' + commit.message + '</li>';
+         return i < 3;
+      });
+    	item.message += '</ul>';
+    }else{
+     	item.message = '';
+    }
+    item.image = 'https://loremflickr.com/120/100/'+ phototags +'/all?lock=' + idx;
+    bundle.push(item);
+  });
+}
+function get_jsfiddle_items( jsondata, domain ){
+	$.each(jsondata, function(idx, value) {
+  	var item = {};
+  	var urlseg = value.url.split('/');
+    item.id = urlseg[4];
+    item.domain = domain;
+    item.type = 'JSFiddle';
+    item.username = value.author;
+    item.date = value.created;
+    item.url = 'https:' + value.url;
+    item.title = value.title;
+    item.message = value.framework;
+    if (value.description != '') {
+    	item.message += ' - ' + value.description;
+    }
+    item.image = 'https://loremflickr.com/120/100/'+ phototags +'/all?lock=' + idx;
+    bundle.push(item);
+  });
+}
+function get_wpjson_items( jsondata, domain ){
+	$.each(jsondata, function(idx, value) {
+    var item = {};
+    item.id = value.id;
+    item.domain = domain;
+    item.type = 'WP-json';
+    item.username = value._embedded.author[0].name;
+    item.date = value.modified;
+    item.url = value.link;
+    item.title = value.title.rendered;
+    item.message = value.excerpt.rendered;
+    if (value._embedded['wp:featuredmedia']) {
+    	item.image = value._embedded['wp:featuredmedia'][0].media_details.sizes.medium.source_url;
+    } else {
+      item.image = 'https://loremflickr.com/120/100/'+ phototags +'/all?lock=' + idx;
+    }
+    bundle.push(item);
+  });
+}
+function load_item_list(){
+    var output = '';
+    bundle.sort(function(a, b) {
+      var keyA = new Date(a.date),
+      keyB = new Date(b.date);
+      // Compare the 2 dates
+      if (keyA < keyB) return 1;
+      if (keyA > keyB) return -1;
+      return 0;
+    });
+    var prevtype = '';
+    var isLastElement = bundle.length-1;
+    var c = 0;
+    $.each(bundle, function(idx, value) {
+        var html = '';
+        if( prevtype != value.type ){
+            if(c != 0){
+               html += '</ul>';// 'end<hr />';
+            }
+            if(c != isLastElement){
+               html += '<ul class="'+ value.type +'">';//'start <hr />';
+            }
+            prevtype = value.type;
+        }
+        html += '<li class="updatebox">';
+        html += '<h3><a class="linkbar" href="' + value.url + '" title="' + value.title + '">' + value.title + '</a></h3>';
+        html += '<sub>'+ value.type + ' '+ value.date + '</sub>';
+        html += '<div>'+ value.message + '</div>';
+        html += '<img src="' + value.image + '" alt="thumbnail media ' + value.title + '" />';
+        html += '<sup>'+value.username + '</sup>';
+        html += '</li>';
+        if(c == isLastElement){
+            html += '</ul>'; // 'end - last <hr />';
+        }
+        output += html;
+        c++;
+    });
+    $('#container').append( output );
+}
+function content_loader(){
+	setTimeout( function(){
+  	if( que <= 0 ){ // loop untill que is emtpy
+  		load_item_list();
+  	}else{
+    	content_loader();
+    }
+	}, timer );
+}
+handle_request();
+content_loader();
+});
+});
+</script>
+</body>
+</html>
